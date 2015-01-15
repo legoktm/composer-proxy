@@ -34,7 +34,7 @@ def get() -> str:
     path = lambda x: os.path.join(conf['TEMP_DIRS'], hash_, x)
     if os.path.isfile(path('vendor.tar.gz')):
         return send_file(path('vendor.tar.gz'))
-    composer_params = ['--prefer-dist', '--no-dev']
+    composer_params = ['--prefer-dist', '--no-dev', '--profile', '--no-ansi']
     # When using the merge-plugin, we have to run `composer install` to fetch it
     # and then `composer update` to actually have it activate. The install step
     # should always be the same, so cache it and copy its contents when creating
