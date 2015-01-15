@@ -8,4 +8,6 @@ Requires composer be installed somewhere.
 TODO:
 * Handle multiple identical requests at the same time
 * Rate limiting
+* Prior optimization of known core dependencies
+* Error handling
 * ...
