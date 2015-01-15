@@ -1,0 +1,11 @@
+composer-proxy
+
+A flask web app that allows you to post the dependencies contained in
+multiple composer.json files and get a vendor.tar.gz in return.
+
+Requires composer be installed somewhere.
+
+TODO:
+* Handle multiple identical requests at the same time
+* Rate limiting
+* ...
