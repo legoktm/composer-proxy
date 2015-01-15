@@ -45,7 +45,18 @@ def get() -> str:
         cwd = os.getcwd()
         os.chdir(merge_plugin_cache)
         with open('composer.json', 'w') as f:
-            json.dump({'require': {'wikimedia/composer-merge-plugin': '0.5.0'}}, f)
+            json.dump({
+                'require': {
+                    'wikimedia/composer-merge-plugin': '0.5.0'
+                },
+                'extra': {
+                    'merge-plugin': {
+                        'include': [
+                            'composer-*.json'
+                        ]
+                    }
+                }
+            }, f)
         subprocess.check_call(['composer', 'install'] + composer_params)
         os.chdir(cwd)
     shutil.copytree(merge_plugin_cache, path(''))
@@ -54,19 +65,6 @@ def get() -> str:
             json.dump({
                 'require': required
             }, f)
-    with open(path('composer.json'), 'w') as f:
-        json.dump({
-            'require': {
-                'wikimedia/composer-merge-plugin': '0.5.0'
-            },
-            'extra': {
-                'merge-plugin': {
-                    'include': [
-                        'composer-*.json'
-                    ]
-                }
-            }
-        }, f)
     cwd = os.getcwd()
     os.chdir(path(''))
     # Fetch dependencies...
