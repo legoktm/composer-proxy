@@ -30,6 +30,10 @@ def merge_dependencies(deps):
     return dict([(name, ','.join(version)) for name, version in merged.items()])
 
 
+def error(code, msg):
+    return json.dumps({'code': code, 'error': msg})
+
+
 @app.route('/get', methods=['POST'])
 def get() -> str:
     if 'data' not in request.form:
@@ -55,7 +59,13 @@ def get() -> str:
     cwd = os.getcwd()
     os.chdir(path(''))
     # Fetch dependencies...
-    subprocess.check_call(['composer', 'install'] + composer_params)
+    try:
+        subprocess.check_call(['composer', 'install'] + composer_params)
+    except subprocess.CalledProcessError as e:
+        if e.returncode == 2:
+            return error('invalid-dependencies', 'The dependencies provided could not be resolved')
+        else:
+            return error('error', 'Composer encountered an error')
     # Put the composer.lock file inside vendor for future reference
     shutil.copy('composer.lock', 'vendor/composer.lock')
     # Build tarball...
