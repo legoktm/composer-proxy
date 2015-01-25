@@ -8,8 +8,10 @@ import requests
 import time
 
 data = [
-    {'monolog/monolog': '*'},
-    {'wikimedia/cdb': '1.0.1'}
+    {'monolog/monolog': '*', 'cssjanus/cssjanus': '1.1.*'},
+    {'wikimedia/cdb': '1.0.1', 'cssjanus/cssjanus': '1.1.0'},
+    {'cssjanus/cssjanus': '1.*'},
+    {'cssjanus/cssjanus': '*'},
 ]
 start = time.time()
 r = requests.post('http://localhost:5000/get', data={'data': json.dumps(data)}, stream=True)

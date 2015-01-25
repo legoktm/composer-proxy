@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from collections import defaultdict
 from flask import Flask, request, send_file
 import hashlib
 import json
@@ -20,6 +21,15 @@ def home() -> str:
     return 'Hello world!'
 
 
+def merge_dependencies(deps):
+    merged = defaultdict(set)
+    for depgroup in deps:
+        for name, version in depgroup.items():
+            merged[name].add(version)
+
+    return dict([(name, ','.join(version)) for name, version in merged.items()])
+
+
 @app.route('/get', methods=['POST'])
 def get() -> str:
     if 'data' not in request.form:
@@ -30,45 +40,22 @@ def get() -> str:
         deps = json.loads(data)
     except ValueError as e:
         return 'Invalid JSON: %s' % str(e)
-    hash_ = hashlib.sha1(data.encode()).hexdigest()
+    merged_deps = merge_dependencies(deps)
+    hash_ = hashlib.sha1(json.dumps(merged_deps).encode()).hexdigest()
+    print(hash_)
     path = lambda x: os.path.join(conf['TEMP_DIRS'], hash_, x)
     if os.path.isfile(path('vendor.tar.gz')):
         return send_file(path('vendor.tar.gz'))
-    composer_params = ['--prefer-dist', '--no-dev', '--profile', '--no-ansi']
-    # When using the merge-plugin, we have to run `composer install` to fetch it
-    # and then `composer update` to actually have it activate. The install step
-    # should always be the same, so cache it and copy its contents when creating
-    # a new build.
-    merge_plugin_cache = os.path.join(conf['TEMP_DIRS'], 'merge-plugin')
-    if not os.path.isdir(merge_plugin_cache):
-        os.mkdir(merge_plugin_cache)
-        cwd = os.getcwd()
-        os.chdir(merge_plugin_cache)
-        with open('composer.json', 'w') as f:
-            json.dump({
-                'require': {
-                    'wikimedia/composer-merge-plugin': '0.5.0'
-                },
-                'extra': {
-                    'merge-plugin': {
-                        'include': [
-                            'composer-*.json'
-                        ]
-                    }
-                }
-            }, f)
-        subprocess.check_call(['composer', 'install'] + composer_params)
-        os.chdir(cwd)
-    shutil.copytree(merge_plugin_cache, path(''))
-    for i, required in enumerate(deps):
-        with open(path('composer-%s.json' % i), 'w') as f:
-            json.dump({
-                'require': required
-            }, f)
+    os.mkdir(path(''))
+    composer_params = ['--prefer-dist', '--no-dev', '--no-plugins', '--no-ansi']
+    with open(path('composer.json'), 'w') as f:
+        json.dump({
+            'require': merged_deps
+        }, f)
     cwd = os.getcwd()
     os.chdir(path(''))
     # Fetch dependencies...
-    subprocess.check_call(['composer', 'update'] + composer_params)
+    subprocess.check_call(['composer', 'install'] + composer_params)
     # Put the composer.lock file inside vendor for future reference
     shutil.copy('composer.lock', 'vendor/composer.lock')
     # Build tarball...
